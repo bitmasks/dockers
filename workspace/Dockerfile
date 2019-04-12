@@ -299,6 +299,23 @@ RUN if [ ${INSTALL_PHPDBG} = true ]; then \
 ;fi
 
 ###########################################################################
+# Blackfire:
+###########################################################################
+
+ARG INSTALL_BLACKFIRE=false
+ARG BLACKFIRE_CLIENT_ID
+ENV BLACKFIRE_CLIENT_ID ${BLACKFIRE_CLIENT_ID}
+ARG BLACKFIRE_CLIENT_TOKEN
+ENV BLACKFIRE_CLIENT_TOKEN ${BLACKFIRE_CLIENT_TOKEN}
+
+RUN if [ ${INSTALL_XDEBUG} = false -a ${INSTALL_BLACKFIRE} = true ]; then \
+    curl -L https://packagecloud.io/gpg.key | apt-key add - && \
+    echo "deb http://packages.blackfire.io/debian any main" | tee /etc/apt/sources.list.d/blackfire.list && \
+    apt-get update -yqq && \
+    apt-get install blackfire-agent \
+;fi
+
+###########################################################################
 # ssh:
 ###########################################################################
 
@@ -324,6 +341,10 @@ RUN if [ ${INSTALL_WORKSPACE_SSH} = true ]; then \
 ###########################################################################
 
 ARG INSTALL_MONGO=false
+ARG PHP_EXT_DOWNLOAD_PREFIX
+ENV PHP_EXT_DOWNLOAD_PREFIX ${PHP_EXT_DOWNLOAD_PREFIX}
+ARG PHP_MONGO_EXT_DOWNLOAD_FILENAME
+ENV PHP_MONGO_EXT_DOWNLOAD_FILENAME ${PHP_MONGO_EXT_DOWNLOAD_FILENAME}
 
 RUN if [ ${INSTALL_MONGO} = true ]; then \
     # Install the mongodb extension
@@ -332,9 +353,25 @@ RUN if [ ${INSTALL_MONGO} = true ]; then \
       echo "extension=mongo.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongo.ini && \
       ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongo.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-mongo.ini \
     ;fi && \
-     curl -L -o /tmp/mongodb-1.5.3.tgz http://pecl.php.net/get/mongodb-1.5.3.tgz  &&  pecl install  /tmp/mongodb-1.5.3.tgz && \
+     curl -L -o /tmp/${PHP_MONGO_EXT_DOWNLOAD_FILENAME} ${PHP_EXT_DOWNLOAD_PREFIX}/${PHP_MONGO_EXT_DOWNLOAD_FILENAME}  &&  pecl install  /tmp/${PHP_MONGO_EXT_DOWNLOAD_FILENAME} && \
     echo "extension=mongodb.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongodb.ini && \
     ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongodb.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-mongodb.ini \
+;fi
+
+###########################################################################
+# tideways:
+###########################################################################
+
+ARG INSTALL_TIDEWAYS=true
+
+RUN if [ ${INSTALL_TIDEWAYS} = true ]; then \
+    curl -L -o /tmp/xhprof.zip http://192.168.0.57:8899/xhprof.zip \
+    && apt-get update && apt-get install  unzip  \
+    && unzip -d /tmp/ /tmp/xhprof.zip  \
+    && cd /tmp/xhprof-master/extension/  \
+    && phpize   &&  ./configure  &&  make  && make install \
+    && echo "extension=xhprof.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/xhprof.ini  \
+    && ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/xhprof.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/xhprof.ini \
 ;fi
 
 
@@ -356,10 +393,12 @@ RUN if [ ${INSTALL_AMQP} = true ]; then \
 ###########################################################################
 
 ARG INSTALL_PHPREDIS=false
+ARG PHP_REDIS_EXT_DOWNLOAD_FILENAME=redis
+ENV PHP_REDIS_EXT_DOWNLOAD_FILENAME ${PHP_REDIS_EXT_DOWNLOAD_FILENAME}
 
 RUN if [ ${INSTALL_PHPREDIS} = true ]; then \
     # Install Php Redis extension
-    curl -L -o /tmp/redis-4.2.0.tgz http://pecl.php.net/get/redis-4.2.0.tgz  &&  pecl install  /tmp/redis-4.2.0.tgz && \
+    curl -L -o /tmp/${PHP_REDIS_EXT_DOWNLOAD_FILENAME} ${PHP_EXT_DOWNLOAD_PREFIX}/${PHP_REDIS_EXT_DOWNLOAD_FILENAME}  &&  pecl install  /tmp/${PHP_REDIS_EXT_DOWNLOAD_FILENAME} && \
     echo "extension=redis.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/redis.ini && \
     phpenmod redis \
 ;fi
@@ -410,6 +449,23 @@ RUN if [ ${INSTALL_IONCUBE} = true ]; then \
     && echo "zend_extension=ioncube_loader.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/0ioncube.ini \
     && rm -rf /tmp/ioncube* \
 ;fi
+
+###########################################################################
+# Drupal Console:
+###########################################################################
+
+USER root
+
+ARG INSTALL_DRUPAL_CONSOLE=false
+
+RUN if [ ${INSTALL_DRUPAL_CONSOLE} = true ]; then \
+    apt-get -y install mysql-client && \
+    curl https://drupalconsole.com/installer -L -o drupal.phar && \
+    mv drupal.phar /usr/local/bin/drupal && \
+    chmod +x /usr/local/bin/drupal \
+;fi
+
+USER laradock
 
 ###########################################################################
 # Node / NVM:
@@ -663,6 +719,53 @@ RUN if [ ${INSTALL_LINUXBREW} = true ]; then \
     echo 'export MANPATH="$LINUXBREWHOME/man:$MANPATH"' >> ~/.bashrc && \
     echo 'export PKG_CONFIG_PATH="$LINUXBREWHOME/lib64/pkgconfig:$LINUXBREWHOME/lib/pkgconfig:$PKG_CONFIG_PATH"' >> ~/.bashrc && \
     echo 'export LD_LIBRARY_PATH="$LINUXBREWHOME/lib64:$LINUXBREWHOME/lib:$LD_LIBRARY_PATH"' >> ~/.bashrc \
+;fi
+
+###########################################################################
+# SQL SERVER:
+###########################################################################
+
+ARG INSTALL_MSSQL=false
+
+RUN set -eux; if [ ${INSTALL_MSSQL} = true ]; then \
+    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
+      apt-get -y install php5.6-sybase freetds-bin freetds-common libsybdb5 \
+      && php -m | grep -q 'mssql' \
+      && php -m | grep -q 'pdo_dblib' \
+    ;else \
+      ###########################################################################
+      #  The following steps were taken from
+      #  https://github.com/Microsoft/msphpsql/wiki/Install-and-configuration
+      ###########################################################################
+      curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
+      curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list > /etc/apt/sources.list.d/mssql-release.list && \
+      apt-get update -yqq && \
+      ACCEPT_EULA=Y apt-get install -y msodbcsql17 mssql-tools unixodbc unixodbc-dev libgss3 odbcinst locales && \
+      ln -sfn /opt/mssql-tools/bin/sqlcmd /usr/bin/sqlcmd && \
+      ln -sfn /opt/mssql-tools/bin/bcp /usr/bin/bcp && \
+      echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
+      locale-gen && \
+      pecl install sqlsrv pdo_sqlsrv && \
+      echo "extension=sqlsrv.so"     > /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-sqlsrv.ini && \
+      echo "extension=pdo_sqlsrv.so" > /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-pdo_sqlsrv.ini \
+      && php -m | grep -q 'sqlsrv' \
+      && php -m | grep -q 'pdo_sqlsrv' \
+    ;fi \
+;fi
+
+###########################################################################
+# Minio:
+###########################################################################
+
+USER root
+
+COPY mc/config.json /root/.mc/config.json
+
+ARG INSTALL_MC=false
+
+RUN if [ ${INSTALL_MC} = true ]; then\
+    curl -fsSL -o /usr/local/bin/mc https://dl.minio.io/client/mc/release/linux-amd64/mc && \
+    chmod +x /usr/local/bin/mc \
 ;fi
 
 ###########################################################################

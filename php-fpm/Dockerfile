@@ -14,7 +14,8 @@
 
 ARG LARADOCK_PHP_VERSION
 
-FROM laradock/php-fpm:2.2-${LARADOCK_PHP_VERSION}
+# FROM laradock/php-fpm:2.2-${LARADOCK_PHP_VERSION}
+FROM letsdockerize/laradock-php-fpm:2.4-${LARADOCK_PHP_VERSION}
 
 LABEL maintainer="Mahmoud Zalt <mahmoud@zalt.me>"
 
@@ -24,20 +25,27 @@ ARG LARADOCK_PHP_VERSION
 ENV DEBIAN_FRONTEND noninteractive
 
 # always run apt update when start and after add new source list, then clean up at end.
-RUN apt-get update -yqq && \
-    apt-get install -y apt-utils && \
-    pecl channel-update pecl.php.net
-
-#
-#--------------------------------------------------------------------------
-# Mandatory Software's Installation
-#--------------------------------------------------------------------------
-#
-# Mandatory Software's such as ("mcrypt", "pdo_mysql", "libssl-dev", ....)
-# are installed on the base image 'laradock/php-fpm' image. If you want
-# to add more Software's or remove existing one, you need to edit the
-# base image (https://github.com/Laradock/php-fpm).
-#
+RUN set -xe; \
+    apt-get update -yqq && \
+    pecl channel-update pecl.php.net && \
+    apt-get install -yqq \
+      apt-utils \
+      #
+      #--------------------------------------------------------------------------
+      # Mandatory Software's Installation
+      #--------------------------------------------------------------------------
+      #
+      # Mandatory Software's such as ("mcrypt", "pdo_mysql", "libssl-dev", ....)
+      # are installed on the base image 'laradock/php-fpm' image. If you want
+      # to add more Software's or remove existing one, you need to edit the
+      # base image (https://github.com/Laradock/php-fpm).
+      #
+      # next lines are here becase there is no auto build on dockerhub see https://github.com/laradock/laradock/pull/1903#issuecomment-463142846
+      libzip-dev zip unzip && \
+      docker-php-ext-configure zip --with-libzip && \
+      # Install the zip extension
+      docker-php-ext-install zip && \
+      php -m | grep -q 'zip'
 
 #
 #--------------------------------------------------------------------------
@@ -47,7 +55,7 @@ RUN apt-get update -yqq && \
 # Optional Software's will only be installed if you set them to `true`
 # in the `docker-compose.yml` before the build.
 # Example:
-#   - INSTALL_ZIP_ARCHIVE=true
+#   - INSTALL_SOAP=true
 #
 
 ###########################################################################
@@ -93,29 +101,17 @@ RUN if [ ${INSTALL_SOAP} = true ]; then \
 ;fi
 
 ###########################################################################
-# pgsql
+# XSL:
 ###########################################################################
 
-ARG INSTALL_PGSQL=false
+ARG INSTALL_XSL=false
 
-RUN if [ ${INSTALL_PGSQL} = true ]; then \
-    # Install the pgsql extension
-    docker-php-ext-install pgsql \
+RUN if [ ${INSTALL_XSL} = true ]; then \
+    # Install the xsl extension
+    apt-get -y install libxslt-dev && \
+    docker-php-ext-install xsl \
 ;fi
 
-###########################################################################
-# pgsql client
-###########################################################################
-
-ARG INSTALL_PG_CLIENT=false
-
-RUN if [ ${INSTALL_PG_CLIENT} = true ]; then \
-    # Create folders if not exists (https://github.com/tianon/docker-brew-debian/issues/65)
-    mkdir -p /usr/share/man/man1 && \
-    mkdir -p /usr/share/man/man7 && \
-    # Install the pgsql client
-    apt-get install -y postgresql-client \
-;fi
 
 ###########################################################################
 # xDebug:
@@ -151,6 +147,7 @@ RUN if [ ${INSTALL_PHPDBG} = true ]; then \
     apt-get install -y --force-yes php${LARADOCK_PHP_VERSION}-phpdbg \
 ;fi
 
+
 ###########################################################################
 # PHP REDIS EXTENSION
 ###########################################################################
@@ -173,7 +170,7 @@ ARG INSTALL_SWOOLE=false
 RUN if [ ${INSTALL_SWOOLE} = true ]; then \
     # Install Php Swoole Extension
     if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl install swoole-2.0.11; \
+      pecl install swoole-2.0.10; \
     else \
       if [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
         pecl install swoole-2.2.0; \
@@ -182,6 +179,7 @@ RUN if [ ${INSTALL_SWOOLE} = true ]; then \
       fi \
     fi && \
     docker-php-ext-enable swoole \
+    && php -m | grep -q 'swoole' \
 ;fi
 
 ###########################################################################
@@ -225,19 +223,6 @@ RUN if [ ${INSTALL_AMQP} = true ]; then \
 ;fi
 
 ###########################################################################
-# ZipArchive:
-###########################################################################
-
-ARG INSTALL_ZIP_ARCHIVE=false
-
-RUN if [ ${INSTALL_ZIP_ARCHIVE} = true ]; then \
-    apt-get install libzip-dev -y && \
-    docker-php-ext-configure zip --with-libzip && \
-    # Install the zip extension
-    docker-php-ext-install zip \
-;fi
-
-###########################################################################
 # pcntl
 ###########################################################################
 
@@ -273,32 +258,6 @@ RUN if [ ${INSTALL_GMP} = true ]; then \
     docker-php-ext-install gmp \
 ;fi
 
-###########################################################################
-# PHP Memcached:
-###########################################################################
-
-ARG INSTALL_MEMCACHED=false
-
-RUN if [ ${INSTALL_MEMCACHED} = true ]; then \
-    # Install the php memcached extension
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      curl -L -o /tmp/memcached.tar.gz "https://github.com/php-memcached-dev/php-memcached/archive/2.2.0.tar.gz"; \
-    else \
-      curl -L -o /tmp/memcached.tar.gz "https://github.com/php-memcached-dev/php-memcached/archive/php7.tar.gz"; \
-    fi \
-    && mkdir -p memcached \
-    && tar -C memcached -zxvf /tmp/memcached.tar.gz --strip 1 \
-    && ( \
-        cd memcached \
-        && phpize \
-        && ./configure \
-        && make -j$(nproc) \
-        && make install \
-    ) \
-    && rm -r memcached \
-    && rm /tmp/memcached.tar.gz \
-    && docker-php-ext-enable memcached \
-;fi
 
 ###########################################################################
 # Exif:
@@ -311,45 +270,6 @@ RUN if [ ${INSTALL_EXIF} = true ]; then \
     docker-php-ext-install exif \
 ;fi
 
-###########################################################################
-# PHP Aerospike:
-###########################################################################
-
-USER root
-
-ARG INSTALL_AEROSPIKE=false
-ARG AEROSPIKE_PHP_REPOSITORY
-
-RUN if [ ${INSTALL_AEROSPIKE} = true ]; then \
-    # Fix dependencies for PHPUnit within aerospike extension
-    apt-get -y install sudo wget && \
-    # Install the php aerospike extension
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      curl -L -o /tmp/aerospike-client-php.tar.gz https://github.com/aerospike/aerospike-client-php5/archive/master.tar.gz; \
-    else \
-      curl -L -o /tmp/aerospike-client-php.tar.gz ${AEROSPIKE_PHP_REPOSITORY}; \
-    fi \
-    && mkdir -p aerospike-client-php \
-    && tar -C aerospike-client-php -zxvf /tmp/aerospike-client-php.tar.gz --strip 1 \
-    && \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      ( \
-          cd aerospike-client-php/src/aerospike \
-          && phpize \
-          && ./build.sh \
-          && make install \
-      ) \
-    else \
-      ( \
-          cd aerospike-client-php/src \
-          && phpize \
-          && ./build.sh \
-          && make install \
-      ) \
-    fi \
-    && rm /tmp/aerospike-client-php.tar.gz \
-    && docker-php-ext-enable aerospike \
-;fi
 
 ###########################################################################
 # IonCube Loader:
@@ -370,14 +290,14 @@ RUN if [ ${INSTALL_IONCUBE} = true ]; then \
 # Opcache:
 ###########################################################################
 
-#ARG INSTALL_OPCACHE=false
-#
-#RUN if [ ${INSTALL_OPCACHE} = true ]; then \
-#    docker-php-ext-install opcache \
-#;fi
-#
-## Copy opcache configration
-#COPY ./opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+ARG INSTALL_OPCACHE=false
+
+RUN if [ ${INSTALL_OPCACHE} = true ]; then \
+    docker-php-ext-install opcache \
+;fi
+
+# Copy opcache configration
+COPY ./opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
 ###########################################################################
 # Mysqli Modifications:
@@ -429,41 +349,6 @@ RUN if [ ${INSTALL_LDAP} = true ]; then \
     docker-php-ext-install ldap \
 ;fi
 
-###########################################################################
-# SQL SERVER:
-###########################################################################
-
-ARG INSTALL_MSSQL=false
-
-RUN set -eux; if [ ${INSTALL_MSSQL} = true ]; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      apt-get -y install freetds-dev libsybdb5 \
-      && ln -s /usr/lib/x86_64-linux-gnu/libsybdb.so /usr/lib/libsybdb.so \
-      && docker-php-ext-install mssql pdo_dblib \
-      && php -m | grep -q 'mssql' \
-      && php -m | grep -q 'pdo_dblib' \
-    ;else \
-      ###########################################################################
-      # Ref from https://github.com/Microsoft/msphpsql/wiki/Dockerfile-for-adding-pdo_sqlsrv-and-sqlsrv-to-official-php-image
-      ###########################################################################
-      # Add Microsoft repo for Microsoft ODBC Driver 13 for Linux
-      apt-get install -y apt-transport-https gnupg \
-      && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-      && curl https://packages.microsoft.com/config/debian/9/prod.list > /etc/apt/sources.list.d/mssql-release.list \
-      && apt-get update -yqq \
-      # Install Dependencies
-      && ACCEPT_EULA=Y apt-get install -y unixodbc unixodbc-dev libgss3 odbcinst msodbcsql17 locales \
-      && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
-      # link local aliases
-      && ln -sfn /etc/locale.alias /usr/share/locale/locale.alias \
-      && locale-gen \
-      # Install pdo_sqlsrv and sqlsrv from PECL. Replace pdo_sqlsrv-4.1.8preview with preferred version.
-      && pecl install pdo_sqlsrv sqlsrv \
-      && docker-php-ext-enable pdo_sqlsrv sqlsrv \
-      && php -m | grep -q 'pdo_sqlsrv' \
-      && php -m | grep -q 'sqlsrv' \
-    ;fi \
-;fi
 
 ###########################################################################
 # Image optimizers:
@@ -555,17 +440,31 @@ RUN if [ ${INSTALL_APCU} = true ]; then \
 
 
 ###########################################################################
-# tideways  GRAPHVIZ:
+# tideways:
 ###########################################################################
 
-RUN curl -L -o /tmp/xhprof.zip https://raw.githubusercontent.com/honourhost/bak/master/xhprof.zip \
-    && apt-get install  unzip  \
+ARG INSTALL_TIDEWAYS=true
+
+RUN if [ ${INSTALL_TIDEWAYS} = true ]; then \
+    curl -L -o /tmp/xhprof.zip https://raw.githubusercontent.com/honourhost/bak/master/xhprof.zip \
+    && apt-get update && apt-get install  unzip  \
     && unzip -d /tmp/ /tmp/xhprof.zip  \
     && cd /tmp/xhprof-master/extension/  &&  ls  -la   \
     && phpize  &&  ./configure \
     && make  && make install  \
     && docker-php-ext-enable  xhprof \
-    && apt-get update -yqq  && apt-get -yqq install graphviz
+;fi
+
+###########################################################################
+# GRAPHVIZ:
+###########################################################################
+
+ARG INSTALL_GRAPHVIZ=true
+
+RUN if [ ${INSTALL_GRAPHVIZ} = true ]; then \
+    apt-get -yqq install graphviz \
+;fi
+
 
 ###########################################################################
 # YAML:
@@ -586,10 +485,39 @@ RUN if [ ${INSTALL_YAML} = true ]; then \
 ;fi
 
 ###########################################################################
+# Install additional locales:
+###########################################################################
+
+ARG INSTALL_ADDITIONAL_LOCALES=false
+ARG ADDITIONAL_LOCALES
+
+RUN if [ ${INSTALL_ADDITIONAL_LOCALES} = true ]; then \
+    apt-get install -y locales \
+    && echo '' >> /usr/share/locale/locale.alias \
+    && temp="${ADDITIONAL_LOCALES%\"}" \
+    && temp="${temp#\"}" \
+    && for i in ${temp}; do sed -i "/$i/s/^#//g" /etc/locale.gen; done \
+    && locale-gen \
+;fi
+
+###########################################################################
+# MySQL Client:
+###########################################################################
+
+USER root
+
+ARG INSTALL_MYSQL_CLIENT=false
+
+RUN if [ ${INSTALL_MYSQL_CLIENT} = true ]; then \
+    apt-get update -yqq && \
+    apt-get -y install mysql-client \
+;fi
+
+###########################################################################
 # Check PHP version:
 ###########################################################################
 
-RUN php -v | head -n 1 | grep -q "PHP ${LARADOCK_PHP_VERSION}."
+RUN set -xe; php -v | head -n 1 | grep -q "PHP ${LARADOCK_PHP_VERSION}."
 
 #
 #--------------------------------------------------------------------------

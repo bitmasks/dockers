@@ -11,8 +11,6 @@ volumes:
     driver: ${VOLUMES_DRIVER}
   redis:
     driver: ${VOLUMES_DRIVER}
-  neo4j:
-    driver: ${VOLUMES_DRIVER}
   mongo:
     driver: ${VOLUMES_DRIVER}
 

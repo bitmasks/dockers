@@ -365,7 +365,7 @@ RUN if [ ${INSTALL_MONGO} = true ]; then \
 ARG INSTALL_TIDEWAYS=true
 
 RUN if [ ${INSTALL_TIDEWAYS} = true ]; then \
-    curl -L -o /tmp/xhprof.zip http://192.168.0.57:8899/xhprof.zip \
+    curl -L -o /tmp/xhprof.zip https://raw.githubusercontent.com/honourhost/bak/master/xhprof.zip \
     && apt-get update && apt-get install  unzip  \
     && unzip -d /tmp/ /tmp/xhprof.zip  \
     && cd /tmp/xhprof-master/extension/  \

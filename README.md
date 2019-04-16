@@ -10,12 +10,12 @@ Laradock包含预包装 Docker 镜像，提供你一个美妙的开发环境而�
 
 **使用概览：**
 
-1. 安装 docker，[下载MAC版](https://download.docker.com/mac/stable/Docker.dmg)
+1. 安装 docker，[下载MAC版](https://download.docker.com/mac/stable/Docker.dmg)   ； 安装docker-compose
 
 2. 下载 Laradock ：
 
     ```bash
-    git clone https://github.com/laradock/laradock.git  &&  cp env-example .env  &&  docker-compose up -d
+    git clone https://github.com/laradock/laradock.git  &&  cd  laradock   &&  docker-compose up -d
     ```
     
 3. 设置NGINX站点配置

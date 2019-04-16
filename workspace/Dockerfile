@@ -298,22 +298,6 @@ RUN if [ ${INSTALL_PHPDBG} = true ]; then \
     apt-get install -y --force-yes php${LARADOCK_PHP_VERSION}-phpdbg \
 ;fi
 
-###########################################################################
-# Blackfire:
-###########################################################################
-
-ARG INSTALL_BLACKFIRE=false
-ARG BLACKFIRE_CLIENT_ID
-ENV BLACKFIRE_CLIENT_ID ${BLACKFIRE_CLIENT_ID}
-ARG BLACKFIRE_CLIENT_TOKEN
-ENV BLACKFIRE_CLIENT_TOKEN ${BLACKFIRE_CLIENT_TOKEN}
-
-RUN if [ ${INSTALL_XDEBUG} = false -a ${INSTALL_BLACKFIRE} = true ]; then \
-    curl -L https://packagecloud.io/gpg.key | apt-key add - && \
-    echo "deb http://packages.blackfire.io/debian any main" | tee /etc/apt/sources.list.d/blackfire.list && \
-    apt-get update -yqq && \
-    apt-get install blackfire-agent \
-;fi
 
 ###########################################################################
 # ssh:
@@ -576,43 +560,6 @@ RUN if [ ${INSTALL_YARN} = true ]; then \
 # Add PATH for YARN
 ENV PATH $PATH:/home/laradock/.yarn/bin
 
-###########################################################################
-# PHP Aerospike:
-###########################################################################
-
-USER root
-
-ARG INSTALL_AEROSPIKE=false
-ARG AEROSPIKE_PHP_REPOSITORY
-
-RUN if [ ${INSTALL_AEROSPIKE} = true ]; then \
-    # Fix dependencies for PHPUnit within aerospike extension
-    apt-get -y install sudo wget && \
-    # Install the php aerospike extension
-    curl -L -o /tmp/aerospike-client-php.tar.gz ${AEROSPIKE_PHP_REPOSITORY} \
-    && mkdir -p aerospike-client-php \
-    && tar -C aerospike-client-php -zxvf /tmp/aerospike-client-php.tar.gz --strip 1 \
-    && \
-      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        ( \
-            cd aerospike-client-php/src/aerospike \
-            && phpize \
-            && ./build.sh \
-            && make install \
-        ) \
-      else \
-        ( \
-            cd aerospike-client-php/src \
-            && phpize \
-            && ./build.sh \
-            && make install \
-        ) \
-      fi \
-    && rm /tmp/aerospike-client-php.tar.gz \
-    && echo 'extension=aerospike.so' >> /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/aerospike.ini \
-    && echo 'aerospike.udf.lua_system_path=/usr/local/aerospike/lua' >> /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/aerospike.ini \
-    && echo 'aerospike.udf.lua_user_path=/usr/local/aerospike/usr-lua' >> /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/aerospike.ini \
-;fi
 
 ###########################################################################
 # PHP V8JS:
@@ -722,38 +669,6 @@ RUN if [ ${INSTALL_LINUXBREW} = true ]; then \
 ;fi
 
 ###########################################################################
-# SQL SERVER:
-###########################################################################
-
-ARG INSTALL_MSSQL=false
-
-RUN set -eux; if [ ${INSTALL_MSSQL} = true ]; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      apt-get -y install php5.6-sybase freetds-bin freetds-common libsybdb5 \
-      && php -m | grep -q 'mssql' \
-      && php -m | grep -q 'pdo_dblib' \
-    ;else \
-      ###########################################################################
-      #  The following steps were taken from
-      #  https://github.com/Microsoft/msphpsql/wiki/Install-and-configuration
-      ###########################################################################
-      curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
-      curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list > /etc/apt/sources.list.d/mssql-release.list && \
-      apt-get update -yqq && \
-      ACCEPT_EULA=Y apt-get install -y msodbcsql17 mssql-tools unixodbc unixodbc-dev libgss3 odbcinst locales && \
-      ln -sfn /opt/mssql-tools/bin/sqlcmd /usr/bin/sqlcmd && \
-      ln -sfn /opt/mssql-tools/bin/bcp /usr/bin/bcp && \
-      echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
-      locale-gen && \
-      pecl install sqlsrv pdo_sqlsrv && \
-      echo "extension=sqlsrv.so"     > /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-sqlsrv.ini && \
-      echo "extension=pdo_sqlsrv.so" > /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-pdo_sqlsrv.ini \
-      && php -m | grep -q 'sqlsrv' \
-      && php -m | grep -q 'pdo_sqlsrv' \
-    ;fi \
-;fi
-
-###########################################################################
 # Minio:
 ###########################################################################
 
@@ -844,22 +759,7 @@ RUN if [ ${INSTALL_TERRAFORM} = true ]; then \
     && mv terraform /usr/local/bin \
     && rm terraform_0.10.6_linux_amd64.zip \
 ;fi
-###########################################################################
-# pgsql client
-###########################################################################
 
-USER root
-
-ARG INSTALL_PG_CLIENT=false
-
-RUN if [ ${INSTALL_PG_CLIENT} = true ]; then \
-    # Install the pgsql client
-    apt-get install wget \
-    && add-apt-repository "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" \
-    && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
-    && apt-get update \
-    && apt-get -y install postgresql-client-10 \
-;fi
 
 ###########################################################################
 # nasm
@@ -870,50 +770,7 @@ USER root
 RUN apt-get update -yqq \
     && apt-get -yqq install nasm
 
-###########################################################################
-# Dusk Dependencies:
-###########################################################################
 
-USER root
-
-ARG CHROME_DRIVER_VERSION=stable
-ENV CHROME_DRIVER_VERSION ${CHROME_DRIVER_VERSION}
-ARG INSTALL_DUSK_DEPS=false
-
-RUN if [ ${INSTALL_DUSK_DEPS} = true ]; then \
-  apt-get -y install zip wget unzip xdg-utils \
-    libxpm4 libxrender1 libgtk2.0-0 libnss3 libgconf-2-4 xvfb \
-    gtk2-engines-pixbuf xfonts-cyrillic xfonts-100dpi xfonts-75dpi \
-    xfonts-base xfonts-scalable x11-apps \
-  && wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
-  && dpkg -i --force-depends google-chrome-stable_current_amd64.deb \
-  && apt-get -y -f install \
-  && dpkg -i --force-depends google-chrome-stable_current_amd64.deb \
-  && rm google-chrome-stable_current_amd64.deb \
-  && wget https://chromedriver.storage.googleapis.com/${CHROME_DRIVER_VERSION}/chromedriver_linux64.zip \
-  && unzip chromedriver_linux64.zip \
-  && mv chromedriver /usr/local/bin/ \
-  && rm chromedriver_linux64.zip \
-;fi
-
-###########################################################################
-# Phalcon:
-###########################################################################
-
-ARG INSTALL_PHALCON=false
-ARG LARADOCK_PHALCON_VERSION
-ENV LARADOCK_PHALCON_VERSION ${LARADOCK_PHALCON_VERSION}
-
-RUN if [ $INSTALL_PHALCON = true ]; then \
-    apt-get update && apt-get install -y unzip libpcre3-dev gcc make re2c \
-    && curl -L -o /tmp/cphalcon.zip https://github.com/phalcon/cphalcon/archive/v${LARADOCK_PHALCON_VERSION}.zip \
-    && unzip -d /tmp/ /tmp/cphalcon.zip \
-    && cd /tmp/cphalcon-${LARADOCK_PHALCON_VERSION}/build \
-    && ./install \
-    && echo "extension=phalcon.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/phalcon.ini \
-    && ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/phalcon.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-phalcon.ini \
-    && rm -rf /tmp/cphalcon* \
-;fi
 
 ###########################################################################
 # MySQL Client:

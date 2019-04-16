@@ -10,7 +10,7 @@ Laradock包含预包装 Docker 镜像，提供你一个美妙的开发环境而�
 
 **使用概览：**
 
-1. 安装 docker，[下载MAC版](https://download.docker.com/mac/stable/Docker.dmg)   ； 安装docker-compose
+1. 安装 docker，[下载MAC版](https://download.docker.com/mac/stable/Docker.dmg)   ； 安装docker-compose ,[下载docker-compose]（https://github.com/docker/compose/releases）
 
 2. 下载 Laradock ：
 

@@ -183,26 +183,6 @@ services:
       - backend
 
 
-  ### MongoDB ##############################################
-  mongo:
-    build: ./mongo
-    ports:
-      - "${MONGODB_PORT}:27017"
-    volumes:
-      - ${DATA_PATH_HOST}/mongo:/data/db
-    networks:
-      - backend
-
-
-  ### Redis ################################################
-  redis:
-    build: ./redis
-    volumes:
-      - ${DATA_PATH_HOST}/redis:/data
-    ports:
-      - "${REDIS_PORT}:6379"
-    networks:
-      - backend
 
 
   ### Portainer ################################################
@@ -231,6 +211,16 @@ services:
     networks:
       - backend
 
+  ### Redis ################################################
+  redis:
+    build: ./redis
+    volumes:
+      - ${DATA_PATH_HOST}/redis:/data
+    ports:
+      - "${REDIS_PORT}:6379"
+    networks:
+      - backend
+
 
   ### REDISWEBUI ################################################
   redis-webui:
@@ -249,16 +239,25 @@ services:
       - redis
 
 
+
+  ### MongoDB ##############################################
+  mongo:
+    build: ./mongo
+    ports:
+      - "${MONGODB_PORT}:27017"
+    volumes:
+      - ${DATA_PATH_HOST}/mongo:/data/db
+    networks:
+      - backend
+
+
   ### MongoWebUI ################################################
   mongo-webui:
     build:
       context: ./mongo-webui
     environment:
-      - ROOT_URL=${MONGO_WEBUI_ROOT_URL}
-      - MONGO_URL=${MONGO_WEBUI_MONGO_URL}
-      - INSTALL_MONGO=${MONGO_WEBUI_INSTALL_MONGO}
-    volumes:
-      - ${DATA_PATH_HOST}/mongo-webui:/data/db
+      - MONGOCLIENT_DEFAULT_CONNECTION_URL=${MONGOCLIENT_DEFAULT_CONNECTION_URL}
+      - MONGO_URL=${MONGO_URL}
     ports:
       - "${MONGO_WEBUI_PORT}:3000"
     networks:

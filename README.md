@@ -1,16 +1,16 @@
 # Laradock精简优化版
 
  
-> 基于[Laradock](https://laradock-docs.linganmin.cn/) 精简，只保留了PHP+MYSQL+MONGODB+REDIS+NGINX+APACHE ，针对PHP添加了redis、mongodb 、 xhprof和xdebug扩展
+> 基于[Laradock](https://laradock-docs.linganmin.cn/) 精简，只保留了PHP+MYSQL+MONGODB+REDIS+NGINX+APACHE ，针对PHP添加了redis、mongodb 、xhprof和xdebug扩展。更换了支持新版mongodb的mongo网页管理端。添加图形处理的GRAPHVIZ软件
 
 <a name="Intro"></a>
 ## 介绍
 
-Laradock包含预包装 Docker 镜像，提供你一个美妙的开发环境而不需要安装 PHP, NGINX, MySQL 和其他任何软件在你本地机器上。
+Laradock预装PHP开发者常用软件集合，不需要单独安装和维护任何软件在你本地机器上。
 
 **使用概览：**
 
-1. 安装 docker，[下载MAC版](https://download.docker.com/mac/stable/Docker.dmg)   ； 安装docker-compose ,[下载docker-compose]（https://github.com/docker/compose/releases）
+1. 安装 docker，[下载MAC版](https://download.docker.com/mac/stable/Docker.dmg)   ； 安装docker-compose ,[下载MAC版](https://github.com/docker/compose/releases)
 
 2. 下载 Laradock ：
 

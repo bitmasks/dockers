@@ -10,7 +10,7 @@ Laradock预装PHP开发者常用软件集合，不需要单独安装和维护任
 
 **使用概览：**
 
-1. 安装 docker，[下载](https://www.docker.com/products/docker-desktop)   ； 安装docker-compose ,[下载](https://github.com/docker/compose/releases)
+1. 安装 "docker"、"docker-compose"和配置"docker加速器"" ,[国内地址](http://get.daocloud.io/#install-compose) 
 
 2. 下载 Laradock ：
 

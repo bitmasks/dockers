@@ -10,7 +10,7 @@ Laradock预装PHP开发者常用软件集合，不需要单独安装和维护任
 
 **使用概览：**
 
-1. 安装 docker，[下载MAC版](https://download.docker.com/mac/stable/Docker.dmg)   ； 安装docker-compose ,[下载MAC版](https://github.com/docker/compose/releases)
+1. 安装 docker，[下载](https://www.docker.com/products/docker-desktop)   ； 安装docker-compose ,[下载](https://github.com/docker/compose/releases)
 
 2. 下载 Laradock ：
 
@@ -20,7 +20,7 @@ Laradock预装PHP开发者常用软件集合，不需要单独安装和维护任
     
 3. 设置NGINX站点配置
 
-4. 打开你的项目的数据库配置文件，然后设置mysql地址为"mysql" 和 redis地址为"redis"。
+4. 在docker内运行的项目配置数据库地址：， mysql地址为"mysql" ，redis地址为"redis"  ，mongodb地址为"mongo"。
 
 5. 打开浏览器，访问 localhost
 

@@ -55,25 +55,9 @@ RUN set -xe; \
 # Optional Software's will only be installed if you set them to `true`
 # in the `docker-compose.yml` before the build.
 # Example:
-#   - INSTALL_SOAP=true
+#   - INSTALL_SSH2=true
 #
 
-###########################################################################
-# SSH2:
-###########################################################################
-
-ARG INSTALL_SSH2=false
-
-RUN if [ ${INSTALL_SSH2} = true ]; then \
-    # Install the ssh2 extension
-    apt-get -y install libssh2-1-dev && \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        pecl install -a ssh2-0.13; \
-    else \
-        pecl install -a ssh2-1.1.2; \
-    fi && \
-    docker-php-ext-enable ssh2 \
-;fi
 
 ###########################################################################
 # libfaketime:
@@ -87,18 +71,6 @@ RUN if [ ${INSTALL_FAKETIME} = true ]; then \
     apt-get install -y libfaketime \
 ;fi
 
-###########################################################################
-# SOAP:
-###########################################################################
-
-ARG INSTALL_SOAP=false
-
-RUN if [ ${INSTALL_SOAP} = true ]; then \
-    # Install the soap extension
-    rm /etc/apt/preferences.d/no-debian-php && \
-    apt-get -y install libxml2-dev php-soap && \
-    docker-php-ext-install soap \
-;fi
 
 ###########################################################################
 # XSL:
@@ -136,16 +108,6 @@ RUN sed -i "s/xdebug.remote_autostart=0/xdebug.remote_autostart=1/" /usr/local/e
     sed -i "s/xdebug.remote_enable=0/xdebug.remote_enable=1/" /usr/local/etc/php/conf.d/xdebug.ini && \
     sed -i "s/xdebug.cli_color=0/xdebug.cli_color=1/" /usr/local/etc/php/conf.d/xdebug.ini
 
-###########################################################################
-# Phpdbg:
-###########################################################################
-
-ARG INSTALL_PHPDBG=false
-
-RUN if [ ${INSTALL_PHPDBG} = true ]; then \
-    # Load the xdebug extension only with phpunit commands
-    apt-get install -y --force-yes php${LARADOCK_PHP_VERSION}-phpdbg \
-;fi
 
 
 ###########################################################################
@@ -220,20 +182,6 @@ RUN if [ ${INSTALL_BCMATH} = true ]; then \
     docker-php-ext-install bcmath \
 ;fi
 
-###########################################################################
-# GMP (GNU Multiple Precision):
-###########################################################################
-
-ARG INSTALL_GMP=false
-
-RUN if [ ${INSTALL_GMP} = true ]; then \
-    # Install the GMP extension
-	  apt-get install -y libgmp-dev && \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h \
-    ;fi && \
-    docker-php-ext-install gmp \
-;fi
 
 
 ###########################################################################
@@ -248,20 +196,6 @@ RUN if [ ${INSTALL_EXIF} = true ]; then \
 ;fi
 
 
-###########################################################################
-# IonCube Loader:
-###########################################################################
-
-ARG INSTALL_IONCUBE=false
-
-RUN if [ ${INSTALL_IONCUBE} = true ]; then \
-    # Install the php ioncube loader
-    curl -L -o /tmp/ioncube_loaders_lin_x86-64.tar.gz https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz \
-    && tar zxpf /tmp/ioncube_loaders_lin_x86-64.tar.gz -C /tmp \
-    && mv /tmp/ioncube/ioncube_loader_lin_${LARADOCK_PHP_VERSION}.so $(php -r "echo ini_get('extension_dir');")/ioncube_loader.so \
-    && printf "zend_extension=ioncube_loader.so\n" > $PHP_INI_DIR/conf.d/0ioncube.ini \
-    && rm -rf /tmp/ioncube* \
-;fi
 
 ###########################################################################
 # Opcache:
@@ -314,17 +248,6 @@ RUN if [ ${INSTALL_GHOSTSCRIPT} = true ]; then \
     ghostscript \
 ;fi
 
-###########################################################################
-# LDAP:
-###########################################################################
-
-ARG INSTALL_LDAP=false
-
-RUN if [ ${INSTALL_LDAP} = true ]; then \
-    apt-get install -y libldap2-dev && \
-    docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ && \
-    docker-php-ext-install ldap \
-;fi
 
 
 ###########################################################################
@@ -353,67 +276,8 @@ RUN if [ ${INSTALL_IMAGEMAGICK} = true ]; then \
     docker-php-ext-enable imagick \
 ;fi
 
-###########################################################################
-# IMAP:
-###########################################################################
 
-ARG INSTALL_IMAP=false
 
-RUN if [ ${INSTALL_IMAP} = true ]; then \
-    apt-get install -y libc-client-dev libkrb5-dev && \
-    rm -r /var/lib/apt/lists/* && \
-    docker-php-ext-configure imap --with-kerberos --with-imap-ssl && \
-    docker-php-ext-install imap \
-;fi
-
-###########################################################################
-# Calendar:
-###########################################################################
-
-USER root
-
-ARG INSTALL_CALENDAR=false
-
-RUN if [ ${INSTALL_CALENDAR} = true ]; then \
-    docker-php-ext-configure calendar && \
-    docker-php-ext-install calendar \
-;fi
-
-###########################################################################
-# Phalcon:
-###########################################################################
-
-ARG INSTALL_PHALCON=false
-ARG LARADOCK_PHALCON_VERSION
-ENV LARADOCK_PHALCON_VERSION ${LARADOCK_PHALCON_VERSION}
-
-# Copy phalcon configration
-COPY ./phalcon.ini /usr/local/etc/php/conf.d/phalcon.ini.disable
-
-RUN if [ $INSTALL_PHALCON = true ]; then \
-    apt-get update && apt-get install -y unzip libpcre3-dev gcc make re2c \
-    && curl -L -o /tmp/cphalcon.zip https://github.com/phalcon/cphalcon/archive/v${LARADOCK_PHALCON_VERSION}.zip \
-    && unzip -d /tmp/ /tmp/cphalcon.zip \
-    && cd /tmp/cphalcon-${LARADOCK_PHALCON_VERSION}/build \
-    && ./install \
-    && mv /usr/local/etc/php/conf.d/phalcon.ini.disable /usr/local/etc/php/conf.d/phalcon.ini \
-    && rm -rf /tmp/cphalcon* \
-;fi
-
-###########################################################################
-# APCU:
-###########################################################################
-
-ARG INSTALL_APCU=false
-
-RUN if [ ${INSTALL_APCU} = true ]; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        pecl install -a apcu-4.0.11; \
-    else \
-        pecl install apcu; \
-    fi && \
-    docker-php-ext-enable apcu \
-;fi
 
 
 ###########################################################################

@@ -153,114 +153,9 @@ COPY ./crontab /etc/cron.d
 
 RUN chmod -R 644 /etc/cron.d
 
-###########################################################################
-# Drush:
-###########################################################################
 
-# Deprecated install of Drush 8 and earlier versions.
-# Drush 9 and up require Drush to be listed as a composer dependency of your site.
 
-USER root
 
-ARG INSTALL_DRUSH=false
-ARG DRUSH_VERSION
-ENV DRUSH_VERSION ${DRUSH_VERSION}
-
-RUN if [ ${INSTALL_DRUSH} = true ]; then \
-    apt-get -y install mysql-client && \
-    # Install Drush with the phar file.
-    curl -fsSL -o /usr/local/bin/drush https://github.com/drush-ops/drush/releases/download/${DRUSH_VERSION}/drush.phar | bash && \
-    chmod +x /usr/local/bin/drush && \
-    drush core-status \
-;fi
-
-###########################################################################
-# WP CLI:
-###########################################################################
-
-# The command line interface for WordPress
-
-USER root
-
-ARG INSTALL_WP_CLI=false
-
-RUN if [ ${INSTALL_WP_CLI} = true ]; then \
-    curl -fsSL -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar | bash && \
-    chmod +x /usr/local/bin/wp \
-;fi
-
-###########################################################################
-# SSH2:
-###########################################################################
-
-USER root
-
-ARG INSTALL_SSH2=false
-
-RUN if [ ${INSTALL_SSH2} = true ]; then \
-  # Install the PHP SSH2 extension
-  apt-get -y install libssh2-1-dev php${LARADOCK_PHP_VERSION}-ssh2 \
-;fi
-
-###########################################################################
-# GMP:
-###########################################################################
-
-USER root
-
-ARG INSTALL_GMP=false
-ARG PHP_VERSION=${LARADOCK_PHP_VERSION}
-
-RUN if [ ${INSTALL_GMP} = true ]; then \
-  # Install the PHP GMP extension
-  apt-get -y install php${LARADOCK_PHP_VERSION}-gmp \
-;fi
-
-###########################################################################
-# SOAP:
-###########################################################################
-
-USER root
-
-ARG INSTALL_SOAP=false
-
-RUN if [ ${INSTALL_SOAP} = true ]; then \
-  # Install the PHP SOAP extension
-  apt-get -y install libxml2-dev php${LARADOCK_PHP_VERSION}-soap \
-;fi
-
-###########################################################################
-# LDAP:
-###########################################################################
-
-ARG INSTALL_LDAP=false
-
-RUN if [ ${INSTALL_LDAP} = true ]; then \
-    apt-get install -y libldap2-dev && \
-    apt-get install -y php${LARADOCK_PHP_VERSION}-ldap \
-;fi
-
-###########################################################################
-# IMAP:
-###########################################################################
-
-ARG INSTALL_IMAP=false
-
-RUN if [ ${INSTALL_IMAP} = true ]; then \
-    apt-get install -y php${LARADOCK_PHP_VERSION}-imap \
-;fi
-
-###########################################################################
-# Subversion:
-###########################################################################
-
-USER root
-
-ARG INSTALL_SUBVERSION=false
-
-RUN if [ ${INSTALL_SUBVERSION} = true ]; then \
-    apt-get install -y subversion \
-;fi
 
 
 ###########################################################################
@@ -285,40 +180,8 @@ RUN sed -i "s/xdebug.remote_autostart=0/xdebug.remote_autostart=1/" /etc/php/${L
     sed -i "s/xdebug.remote_enable=0/xdebug.remote_enable=1/" /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/xdebug.ini && \
     sed -i "s/xdebug.cli_color=0/xdebug.cli_color=1/" /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/xdebug.ini
 
-###########################################################################
-# Phpdbg:
-###########################################################################
-
-USER root
-
-ARG INSTALL_PHPDBG=false
-
-RUN if [ ${INSTALL_PHPDBG} = true ]; then \
-    # Load the xdebug extension only with phpunit commands
-    apt-get install -y --force-yes php${LARADOCK_PHP_VERSION}-phpdbg \
-;fi
 
 
-###########################################################################
-# ssh:
-###########################################################################
-
-ARG INSTALL_WORKSPACE_SSH=false
-
-COPY insecure_id_rsa /tmp/id_rsa
-COPY insecure_id_rsa.pub /tmp/id_rsa.pub
-
-RUN if [ ${INSTALL_WORKSPACE_SSH} = true ]; then \
-    rm -f /etc/service/sshd/down && \
-    cat /tmp/id_rsa.pub >> /root/.ssh/authorized_keys \
-        && cat /tmp/id_rsa.pub >> /root/.ssh/id_rsa.pub \
-        && cat /tmp/id_rsa >> /root/.ssh/id_rsa \
-        && rm -f /tmp/id_rsa* \
-        && chmod 644 /root/.ssh/authorized_keys /root/.ssh/id_rsa.pub \
-    && chmod 400 /root/.ssh/id_rsa \
-    && cp -rf /root/.ssh /home/laradock \
-    && chown -R laradock:laradock /home/laradock/.ssh \
-;fi
 
 ###########################################################################
 # MongoDB:
@@ -359,18 +222,6 @@ RUN if [ ${INSTALL_TIDEWAYS} = true ]; then \
 ;fi
 
 
-###########################################################################
-# AMQP:
-###########################################################################
-
-ARG INSTALL_AMQP=false
-
-RUN if [ ${INSTALL_AMQP} = true ]; then \
-    apt-get install librabbitmq-dev -y && \
-    pecl -q install amqp && \
-    echo "extension=amqp.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/amqp.ini && \
-    ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/amqp.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-amqp.ini \
-;fi
 
 ###########################################################################
 # PHP REDIS EXTENSION
@@ -408,48 +259,9 @@ RUN if [ ${INSTALL_SWOOLE} = true ]; then \
     ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/swoole.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-swoole.ini \
 ;fi
 
-###########################################################################
-# Libpng16 EXTENSION
-###########################################################################
 
-ARG INSTALL_LIBPNG=false
 
-RUN if [ ${INSTALL_LIBPNG} = true ]; then \
-    apt-get update && \
-    apt-get install libpng16-16 \
-;fi
 
-###########################################################################
-# IonCube Loader
-###########################################################################
-
-ARG INSTALL_IONCUBE=false
-
-RUN if [ ${INSTALL_IONCUBE} = true ]; then \
-    # Install the php ioncube loader
-    curl -L -o /tmp/ioncube_loaders_lin_x86-64.tar.gz https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz \
-    && tar zxpf /tmp/ioncube_loaders_lin_x86-64.tar.gz -C /tmp \
-    && mv /tmp/ioncube/ioncube_loader_lin_${LARADOCK_PHP_VERSION}.so $(php -r "echo ini_get('extension_dir');")/ioncube_loader.so \
-    && echo "zend_extension=ioncube_loader.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/0ioncube.ini \
-    && rm -rf /tmp/ioncube* \
-;fi
-
-###########################################################################
-# Drupal Console:
-###########################################################################
-
-USER root
-
-ARG INSTALL_DRUPAL_CONSOLE=false
-
-RUN if [ ${INSTALL_DRUPAL_CONSOLE} = true ]; then \
-    apt-get -y install mysql-client && \
-    curl https://drupalconsole.com/installer -L -o drupal.phar && \
-    mv drupal.phar /usr/local/bin/drupal && \
-    chmod +x /usr/local/bin/drupal \
-;fi
-
-USER laradock
 
 ###########################################################################
 # Node / NVM:
@@ -578,18 +390,7 @@ RUN if [ ${INSTALL_V8JS} = true ]; then \
     && echo "extension=v8js.so" >> /etc/php/${LARADOCK_PHP_VERSION}/cli/php.ini \
 ;fi
 
-###########################################################################
-# Laravel Envoy:
-###########################################################################
 
-USER laradock
-
-ARG INSTALL_LARAVEL_ENVOY=false
-
-RUN if [ ${INSTALL_LARAVEL_ENVOY} = true ]; then \
-    # Install the Laravel Envoy
-    composer global require "laravel/envoy=~1.0" \
-;fi
 
 ###########################################################################
 # Laravel Installer:
@@ -611,34 +412,6 @@ RUN if [ ${INSTALL_LARAVEL_INSTALLER} = true ]; then \
 	composer global require "laravel/installer" \
 ;fi
 
-###########################################################################
-# Deployer:
-###########################################################################
-
-USER root
-
-ARG INSTALL_DEPLOYER=false
-
-RUN if [ ${INSTALL_DEPLOYER} = true ]; then \
-    # Install the Deployer
-    # Using Phar as currently there is no support for laravel 4 from composer version
-    # Waiting to be resolved on https://github.com/deployphp/deployer/issues/1552
-    curl -LO https://deployer.org/deployer.phar && \
-    mv deployer.phar /usr/local/bin/dep && \
-    chmod +x /usr/local/bin/dep \
-;fi
-
-###########################################################################
-# Prestissimo:
-###########################################################################
-USER laradock
-
-ARG INSTALL_PRESTISSIMO=false
-
-RUN if [ ${INSTALL_PRESTISSIMO} = true ]; then \
-    # Install Prestissimo
-    composer global require "hirak/prestissimo" \
-;fi
 
 ###########################################################################
 # Linuxbrew:
@@ -700,25 +473,7 @@ RUN if [ ${INSTALL_IMAGE_OPTIMIZERS} = true ]; then \
 
 USER laradock
 
-###########################################################################
-# Symfony:
-###########################################################################
 
-USER root
-
-ARG INSTALL_SYMFONY=false
-
-RUN if [ ${INSTALL_SYMFONY} = true ]; then \
-  mkdir -p /usr/local/bin \
-  && curl -LsS https://symfony.com/installer -o /usr/local/bin/symfony \
-  && chmod a+x /usr/local/bin/symfony \
-  #  Symfony 3 alias
-  && echo 'alias dev="php bin/console -e=dev"' >> ~/.bashrc \
-  && echo 'alias prod="php bin/console -e=prod"' >> ~/.bashrc \
-  #  Symfony 2 alias
-  #  && echo 'alias dev="php app/console -e=dev"' >> ~/.bashrc \
-  #  && echo 'alias prod="php app/console -e=prod"' >> ~/.bashrc \
-;fi
 
 ###########################################################################
 # PYTHON:
@@ -742,22 +497,6 @@ ARG INSTALL_IMAGEMAGICK=false
 
 RUN if [ ${INSTALL_IMAGEMAGICK} = true ]; then \
     apt-get install -y imagemagick php-imagick \
-;fi
-
-###########################################################################
-# Terraform:
-###########################################################################
-
-USER root
-
-ARG INSTALL_TERRAFORM=false
-
-RUN if [ ${INSTALL_TERRAFORM} = true ]; then \
-    apt-get -y install sudo wget unzip \
-    && wget https://releases.hashicorp.com/terraform/0.10.6/terraform_0.10.6_linux_amd64.zip \
-    && unzip terraform_0.10.6_linux_amd64.zip \
-    && mv terraform /usr/local/bin \
-    && rm terraform_0.10.6_linux_amd64.zip \
 ;fi
 
 

@@ -60,32 +60,6 @@ RUN set -xe; \
 
 
 ###########################################################################
-# libfaketime:
-###########################################################################
-
-USER root
-
-ARG INSTALL_FAKETIME=false
-
-RUN if [ ${INSTALL_FAKETIME} = true ]; then \
-    apt-get install -y libfaketime \
-;fi
-
-
-###########################################################################
-# XSL:
-###########################################################################
-
-ARG INSTALL_XSL=false
-
-RUN if [ ${INSTALL_XSL} = true ]; then \
-    # Install the xsl extension
-    apt-get -y install libxslt-dev && \
-    docker-php-ext-install xsl \
-;fi
-
-
-###########################################################################
 # xDebug:
 ###########################################################################
 
@@ -173,6 +147,7 @@ RUN if [ ${INSTALL_PCNTL} = true ]; then \
 
 ###########################################################################
 # bcmath:
+# 数据计算库
 ###########################################################################
 
 ARG INSTALL_BCMATH=false
@@ -234,51 +209,6 @@ RUN if [ ${INSTALL_INTL} = true ]; then \
     docker-php-ext-install intl \
 ;fi
 
-###########################################################################
-# GHOSTSCRIPT:
-###########################################################################
-
-ARG INSTALL_GHOSTSCRIPT=false
-
-RUN if [ ${INSTALL_GHOSTSCRIPT} = true ]; then \
-    # Install the ghostscript extension
-    # for PDF editing
-    apt-get install -y \
-    poppler-utils \
-    ghostscript \
-;fi
-
-
-
-###########################################################################
-# Image optimizers:
-###########################################################################
-
-USER root
-
-ARG INSTALL_IMAGE_OPTIMIZERS=false
-
-RUN if [ ${INSTALL_IMAGE_OPTIMIZERS} = true ]; then \
-    apt-get install -y jpegoptim optipng pngquant gifsicle \
-;fi
-
-###########################################################################
-# ImageMagick:
-###########################################################################
-
-USER root
-
-ARG INSTALL_IMAGEMAGICK=false
-
-RUN if [ ${INSTALL_IMAGEMAGICK} = true ]; then \
-    apt-get install -y libmagickwand-dev imagemagick && \
-    pecl install imagick && \
-    docker-php-ext-enable imagick \
-;fi
-
-
-
-
 
 ###########################################################################
 # tideways:
@@ -306,40 +236,6 @@ RUN if [ ${INSTALL_GRAPHVIZ} = true ]; then \
     apt-get -yqq install graphviz \
 ;fi
 
-
-###########################################################################
-# YAML:
-###########################################################################
-
-USER root
-
-ARG INSTALL_YAML=false
-
-RUN if [ ${INSTALL_YAML} = true ]; then \
-    apt-get install libyaml-dev -y ; \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        pecl install -a yaml-1.3.2; \
-    else \
-        pecl install yaml; \
-    fi && \
-    docker-php-ext-enable yaml \
-;fi
-
-###########################################################################
-# Install additional locales:
-###########################################################################
-
-ARG INSTALL_ADDITIONAL_LOCALES=false
-ARG ADDITIONAL_LOCALES
-
-RUN if [ ${INSTALL_ADDITIONAL_LOCALES} = true ]; then \
-    apt-get install -y locales \
-    && echo '' >> /usr/share/locale/locale.alias \
-    && temp="${ADDITIONAL_LOCALES%\"}" \
-    && temp="${temp#\"}" \
-    && for i in ${temp}; do sed -i "/$i/s/^#//g" /etc/locale.gen; done \
-    && locale-gen \
-;fi
 
 ###########################################################################
 # MySQL Client:
@@ -378,11 +274,6 @@ RUN apt-get clean && \
 
 RUN usermod -u 1000 www-data
 
-# Adding the faketime library to the preload file needs to be done last
-# otherwise it will preload it for all commands that follow in this file
-RUN if [ ${INSTALL_FAKETIME} = true ]; then \
-    echo "/usr/lib/x86_64-linux-gnu/faketime/libfaketime.so.1" > /etc/ld.so.preload \
-;fi
 
 WORKDIR /var/www
 

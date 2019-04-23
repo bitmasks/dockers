@@ -72,9 +72,9 @@ RUN if [ ${INSTALL_XDEBUG} = true ]; then \
     git clone git://github.com/xdebug/xdebug.git  &&  ls | grep xdebug  &&  \
     cd xdebug/   &&   phpize  &&   ./configure    &&   make  &&  make  install ;  \
   else \
-    #pecl install xdebug; \
-    git clone git://github.com/xdebug/xdebug.git  &&  ls | grep xdebug  &&  \
-    cd xdebug/   &&   phpize  &&   ./configure    &&   make  &&  make  install ; \
+    pecl install xdebug; \
+    #git clone git://github.com/xdebug/xdebug.git  &&  ls | grep xdebug  &&  \
+    #cd xdebug/   &&   phpize  &&   ./configure    &&   make  &&  make  install ; \
   fi && \
   docker-php-ext-enable xdebug \
 ;fi

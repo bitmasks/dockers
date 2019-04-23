@@ -168,7 +168,9 @@ ARG INSTALL_XDEBUG=false
 
 RUN if [ ${INSTALL_XDEBUG} = true ]; then \
     # Load the xdebug extension only with phpunit commands
-    apt-get install -y php${LARADOCK_PHP_VERSION}-xdebug && \
+    touch  /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-xdebug.ini && \
+    git clone git://github.com/xdebug/xdebug.git  &&  ls | grep xdebug  &&  \
+    cd xdebug/   &&   phpize  &&   ./configure    &&   make  &&  make  install  && \
     sed -i 's/^;//g' /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-xdebug.ini && \
     echo "alias phpunit='php -dzend_extension=xdebug.so /var/www/vendor/bin/phpunit'" >> ~/.bashrc \
 ;fi

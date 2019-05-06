@@ -15,7 +15,7 @@ Laradock预装PHP开发者常用软件集合，不需要单独安装和维护任
 2. 下载 Laradock ：
 
     ```bash
-    git clone https://github.com/laradock/laradock.git  &&  cd  laradock   &&  docker-compose up -d
+    git clone https://github.com/honourhost/laradock.git  &&  cd  laradock   &&  docker-compose up -d
     ```
     
 3. 设置NGINX站点配置

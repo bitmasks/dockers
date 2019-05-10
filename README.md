@@ -25,6 +25,14 @@ Laradock预装PHP开发者常用软件集合，不需要单独安装和维护任
 5. 打开浏览器，访问 localhost
 
 
+**todo**
+
+1.集成es
+
+2.集成rabbitmq
+
+
+
 ## 许可证
 
 [MIT License](https://github.com/laradock/laradock/blob/master/LICENSE) (MIT)

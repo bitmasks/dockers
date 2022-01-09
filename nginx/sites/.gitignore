@@ -1,3 +1,0 @@
-*.conf
-!localhost-80.conf
-!default.conf.example

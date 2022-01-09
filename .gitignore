@@ -1,3 +1,11 @@
-.idea
-.DS_Store
-logs/nginx/*
+/.idea
+/redis/data/*
+/elasticsearch/data/*
+/mysql/data/*
+/mysql/mysql56/data/*
+/mysql/mysql57/data/*
+/openldap/data/*
+/prometheus/grafana-storage/*
+/prometheus/node-exporter/*
+/docker-compose.yml.test
+/nginx/log/*

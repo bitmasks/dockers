@@ -1,7 +1,7 @@
 # devops  docker all for one
 
 ### 怎么使用
- 下载并启动(请确保docker已经启动，另外docker-compose已经安装！):
+ 下载并启动(😁请确保docker已经启动、和docker-compose已经安装！):
  ```
  https://github.com/bitmasks/dockers.git  && cd dockers && docker-compose up -d
  ```

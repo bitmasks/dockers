@@ -9,3 +9,4 @@
 /prometheus/node-exporter/*
 /docker-compose.yml.test
 /nginx/log/*
+/.git

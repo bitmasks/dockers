@@ -162,7 +162,7 @@ services:
       - ./prometheus/grafana-storage:/var/lib/grafana
 
   kibana:
-    image: kibana:7.7.0
+    image: kibana:7.9.1
     container_name: kibana
     networks:
       private-dockers-network:
@@ -175,23 +175,27 @@ services:
       - elasticsearch #kibana在elasticsearch启动之后再启动
 
   logstash:
-    image: logstash:7.7.0
+    image: docker.elastic.co/logstash/logstash:7.3.0
     container_name: logstash
     networks:
       private-dockers-network:
         ipv4_address: 172.100.0.17
     extra_hosts:
       - "elasticsearch:172.100.0.10"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
     ports:
       - 4560:4560
+      - 5001:5001
+      - 5044:5044
     volumes:
-      - ./logstash/logstash-springboot.conf:/usr/share/logstash/pipeline/logstash.conf #挂载logstash的配置文件
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
     depends_on:
       - elasticsearch #kibana在elasticsearch启动之后再启动
 
   finereport:
-    container_name: finereport
-    image: chaiyd/finereport:10.01.15
+    build: ./finereport
     networks:
       private-dockers-network:
         ipv4_address: 172.100.0.18

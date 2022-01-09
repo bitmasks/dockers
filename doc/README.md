@@ -183,8 +183,9 @@ project_db_1:postgresql
 添加主机名的标签，就是往/etc/hosts文件中添加一些记录，与Docker client的--add-host类似：
 
 ```azure
-extra_hosts: - "somehost:162.242.195.82"
- - "otherhost:50.31.209.229"
+extra_hosts: 
+  - "somehost:162.242.195.82"
+  - "otherhost:50.31.209.229"
 ```
 
 启动之后查看容器内部hosts：

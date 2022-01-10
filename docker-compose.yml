@@ -20,7 +20,7 @@ services:
     hostname: mysql
     networks:
       private-dockers-network:
-        ipv4_address: 172.100.0.3
+        ipv4_address: ${MYSQL_IP}
     ports:
       - "3306:3306"
     environment:
@@ -72,28 +72,27 @@ services:
       - ./php/php5/php.ini:/usr/local/etc/php/php.ini
 
   elasticsearch:
-    image: elasticsearch:7.9.1 
-    container_name: elasticsearch  
+    build:
+      context: elasticsearch/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    container_name: elasticsearch
+    volumes:
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,z
+      - ./elasticsearch/data:/usr/share/elasticsearch/data:z
     networks:
       private-dockers-network:
-        ipv4_address: 172.100.0.10
+        ipv4_address: ${ES_IP}
     ports:
       - "9200:9200"
+      - "9300:9300"
     environment:
-      - cluster.name=cluster
-      - node.name=node
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - cluster.initial_master_nodes=node
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65536
-        hard: 65536
-    volumes:
-      - ./elasticsearch/data:/usr/share/elasticsearch/data 
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      ELASTIC_USER: elastic
+      ELASTIC_PASSWORD: changeme
+      # Use single node discovery in order to disable production mode and avoid bootstrap checks.
+      # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
+      discovery.type: single-node
 
   mongo:
     image: mongo
@@ -161,46 +160,55 @@ services:
     volumes:
       - ./prometheus/grafana-storage:/var/lib/grafana
 
-  kibana:
-    image: kibana:7.9.1
-    container_name: kibana
+  logstash:
+    build:
+      context: logstash/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    container_name: logstash
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro,z
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro,z
     networks:
       private-dockers-network:
-        ipv4_address: 172.100.0.16
+        ipv4_address: 172.100.0.23
+    extra_hosts:
+      - elasticsearch:${ES_IP}
     ports:
-      - 5601:5601
+      - "5044:5044"
+      - "5000:5000/tcp"
+      - "5000:5000/udp"
+      - "9600:9600"
     environment:
-      - ELASTICSEARCH_URL=http://172.100.0.10:9200 #设置访问elasticsearch的地址
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
     depends_on:
-      - elasticsearch #kibana在elasticsearch启动之后再启动
+      - elasticsearch
 
-  logstash:
-    image: docker.elastic.co/logstash/logstash:7.3.0
-    container_name: logstash
+  kibana:
+    build:
+      context: kibana/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    container_name: kibana
+    volumes:
+      - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,z
     networks:
       private-dockers-network:
         ipv4_address: 172.100.0.17
     extra_hosts:
-      - "elasticsearch:172.100.0.10"
-    environment:
-      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+      - elasticsearch:${ES_IP}
     ports:
-      - 4560:4560
-      - 5001:5001
-      - 5044:5044
-    volumes:
-      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
-      - ./logstash/pipeline:/usr/share/logstash/pipeline
+      - "5601:5601"
     depends_on:
-      - elasticsearch #kibana在elasticsearch启动之后再启动
+      - elasticsearch
 
-  finereport:
-    build: ./finereport
-    networks:
-      private-dockers-network:
-        ipv4_address: 172.100.0.18
-    ports:
-      - 9012:8080
+#  demo:
+#    build: ./demo
+#    networks:
+#      private-dockers-network:
+#        ipv4_address: 172.100.0.18
+#    ports:
+#      - 9012:8080
 
   openldap:
     container_name: openldap
@@ -267,6 +275,10 @@ services:
       - SITE_URL=http://localhost:9082/
     depends_on:
       - openldap
+
+
+
+
 
 networks:
   private-dockers-network:

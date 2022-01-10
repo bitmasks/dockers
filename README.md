@@ -38,8 +38,6 @@
   - 浏览器：http://localhost:16686/
 - kibana
 - logstash
-- finereport
-  - 报表  ，demo：http://demo.finereport.com/
 - openldap     ldap
 - phpldapadmin ldap管理页面
   - 浏览器：http://localhost:9081/
